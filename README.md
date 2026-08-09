@@ -71,3 +71,8 @@ MSCK REPAIR TABLE testservice_logs;
 ``` SQL
 SELECT * FROM testservice_logs;
 ```
+
+## 🛠️ Functional Templates
+This repository includes production-ready templates to get started quickly:
+- **Terraform**: Located in `terraform/templates/` for cluster and provider setup.
+- **Kubernetes**: Located in `kubernetes/manifests/` for application deployment and security policies.
