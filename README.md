@@ -1,4 +1,16 @@
 # aws-serverless-data-pipeline-by-terraform
+
+## Architecture Diagram
+
+```mermaid
+graph LR
+  DataSource --> Kinesis
+  Kinesis --> Lambda
+  Lambda --> Glue
+  Glue --> S3Bucket
+  S3Bucket --> Athena
+```
+
 ![GitHub](https://img.shields.io/github/license/gnokoheat/aws-serverless-data-pipeline-by-terraform) ![GitHub top language](https://img.shields.io/github/languages/top/gnokoheat/aws-serverless-data-pipeline-by-terraform) ![GitHub repo size](https://img.shields.io/github/repo-size/gnokoheat/aws-serverless-data-pipeline-by-terraform) ![GitHub last commit](https://img.shields.io/github/last-commit/gnokoheat/aws-serverless-data-pipeline-by-terraform)
 
 ![](data-pipeline.png)
