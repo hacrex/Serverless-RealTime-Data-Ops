@@ -1,0 +1,5 @@
+# Use AWS SSO, an instance role, or environment-based credentials. Do not put access keys here.
+region         = "us-east-1"
+aws_account_id = "123456789012"
+workspace      = "dev"
+service_name   = "realtime-data-ops"

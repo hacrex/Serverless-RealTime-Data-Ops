@@ -1,0 +1,4 @@
+This portfolio repository is based on the AWS Serverless Data Pipeline by Terraform project:
+https://github.com/gnokoheat/aws-serverless-data-pipeline-by-terraform
+
+The imported implementation is retained under its upstream MIT License. HacRex-specific documentation and configuration hardening are provided separately.
