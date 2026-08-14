@@ -1,78 +1,35 @@
-# aws-serverless-data-pipeline-by-terraform
+# Serverless Real-Time Data Ops
 
-## Architecture Diagram
+A portfolio adaptation of [AWS Serverless Data Pipeline by Terraform](https://github.com/gnokoheat/aws-serverless-data-pipeline-by-terraform), retained under the upstream MIT License. The repository is used to discuss an AWS event-processing path from intake through analytics.
+
+## Architecture in scope
 
 ```mermaid
-graph LR
-  DataSource --> Kinesis
-  Kinesis --> Lambda
-  Lambda --> Glue
-  Glue --> S3Bucket
-  S3Bucket --> Athena
+flowchart LR
+  Client --> API[API Gateway]
+  API --> Stream[Kinesis]
+  Stream --> Worker[Lambda]
+  Worker --> Store[S3]
+  Store --> Catalog[Glue]
+  Catalog --> Query[Athena]
 ```
 
-![GitHub](https://img.shields.io/github/license/gnokoheat/aws-serverless-data-pipeline-by-terraform) ![GitHub top language](https://img.shields.io/github/languages/top/gnokoheat/aws-serverless-data-pipeline-by-terraform) ![GitHub repo size](https://img.shields.io/github/repo-size/gnokoheat/aws-serverless-data-pipeline-by-terraform) ![GitHub last commit](https://img.shields.io/github/last-commit/gnokoheat/aws-serverless-data-pipeline-by-terraform)
+## What I changed for this portfolio
 
-![](data-pipeline.png)
+I removed unrelated Kubernetes templates and static credential placeholders. The root Terraform now accepts account and environment inputs through variables; `terraform.tfvars.example` shows the required non-secret fields.
 
-**AWS Serverless Data Pipeline example by Terraform**
+## What to validate before an apply
 
-- AWS Serverless Data Pipeline by Terraform ( API Gateway + Lambda + Kinesis + S3 + Athena )
+- Authenticate with an approved AWS SSO/profile, workload role, or CI identity.
+- Confirm the target account, region, resource names, retention settings, and IAM permissions.
+- Review the plan in a disposable account; do not put access keys in `.tfvars`.
 
-## Include
-This terraform code include All-In-One for AWS Serverless Data Pipeline
-
-- API Gateway
-- Lambda
-- Kinesis
-- S3
-- Athena
-
-## Customize main.tf in terraform code
-``` HCL
-  workspace      = "dev"
-  aws_account_id = "1111111111111"
-  region         = "${var.region}"
-  service_name = "testservice"
-
-  // api gateway method
-  apigw_method = "POST"
-
-  // kinesis firehose option
-  s3_buffer_size = 5
-  s3_buffer_interval = 300
-
-  // glue table patition
-  columns = {
-    id = "int"
-    type = "string"
-    status = "int"
-    created_at = "timestamp"
-  }
+```bash
+cp terraform.tfvars.example terraform.tfvars
+terraform fmt -check -recursive
+terraform init
+terraform validate
+terraform plan
 ```
 
-## Steps after apply terraform
-
-1. Send 'JSON Data' to API Gateway with API key.
-```
-curl -X POST \
-  https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/dev/testservice \
-  -H 'Content-Type: application/json' \
-  -H 'x-api-key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' \
-  -d '{"id": 1, "type": "click", "status": 0, "created_at": "2019-02-26 04:00:00"}'
-```
-
-2. Query your 'JSON Data' in Athena.
-- Added partition to metastore
-``` SQL
-MSCK REPAIR TABLE testservice_logs;
-```
-- Get your data
-``` SQL
-SELECT * FROM testservice_logs;
-```
-
-## 🛠️ Functional Templates
-This repository includes production-ready templates to get started quickly:
-- **Terraform**: Located in `terraform/templates/` for cluster and provider setup.
-- **Kubernetes**: Located in `kubernetes/manifests/` for application deployment and security policies.
+See [`docs/DEPLOYMENT_GUIDE.md`](docs/DEPLOYMENT_GUIDE.md) for operational notes. The historical upstream README is retained in [`docs/UPSTREAM_README.md`](docs/UPSTREAM_README.md).
