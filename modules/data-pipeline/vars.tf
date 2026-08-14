@@ -37,3 +37,27 @@ variable "columns" {
   description = "columns"
   type        = "map"
 }
+
+variable "lambda_timeout_seconds" {
+  type        = number
+  default     = 15
+  description = "Maximum API intake execution time in seconds."
+}
+
+variable "lambda_memory_mb" {
+  type        = number
+  default     = 256
+  description = "Memory assigned to the event-intake Lambda."
+}
+
+variable "lambda_reserved_concurrency" {
+  type        = number
+  default     = 5
+  description = "Concurrency cap that protects downstream delivery during bursts."
+}
+
+variable "log_retention_days" {
+  type        = number
+  default     = 14
+  description = "CloudWatch log retention period for the intake Lambda."
+}

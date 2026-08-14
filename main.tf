@@ -31,7 +31,11 @@ module "data_pipeline" {
   apigw_method       = var.apigw_method
   s3_buffer_size     = var.s3_buffer_size
   s3_buffer_interval = var.s3_buffer_interval
-  columns            = var.columns
+  columns                     = var.columns
+  lambda_timeout_seconds      = var.lambda_timeout_seconds
+  lambda_memory_mb            = var.lambda_memory_mb
+  lambda_reserved_concurrency = var.lambda_reserved_concurrency
+  log_retention_days          = var.log_retention_days
 }
 
 variable "region" { type = string }
@@ -68,4 +72,25 @@ variable "columns" {
     status     = "int"
     created_at = "timestamp"
   }
+}
+
+
+variable "lambda_timeout_seconds" {
+  type    = number
+  default = 15
+}
+
+variable "lambda_memory_mb" {
+  type    = number
+  default = 256
+}
+
+variable "lambda_reserved_concurrency" {
+  type    = number
+  default = 5
+}
+
+variable "log_retention_days" {
+  type    = number
+  default = 14
 }

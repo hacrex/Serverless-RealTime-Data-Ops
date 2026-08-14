@@ -1,35 +1,51 @@
 data "template_file" "lambda_tpl" {
-  template = "${file("${path.module}/index.js.tpl")}"
+  template = file("${path.module}/index.py.tpl")
+
   vars = {
-        firehose = "${aws_kinesis_firehose_delivery_stream.data_stream.name}"
-    }
+    firehose = aws_kinesis_firehose_delivery_stream.data_stream.name
+  }
 }
 
 data "archive_file" "lambda_zip" {
   type        = "zip"
-  output_path = "lambda_function.zip"
+  output_path = "${path.module}/lambda_function.zip"
 
   source {
-    content  = "${data.template_file.lambda_tpl.rendered}"
-    filename = "index.js"
+    content  = data.template_file.lambda_tpl.rendered
+    filename = "index.py"
   }
 }
 
+resource "aws_cloudwatch_log_group" "lambda" {
+  name              = "/aws/lambda/${var.service_name}-${var.workspace}"
+  retention_in_days = var.log_retention_days
+}
+
 resource "aws_lambda_function" "lambda" {
-  filename         = "lambda_function.zip"
-  function_name    = "${var.service_name}-${var.workspace}"
-  role             = "${aws_iam_role.lambda.arn}"
-  handler          = "index.handler"
-  source_code_hash = "${data.archive_file.lambda_zip.output_base64sha256}"
-  runtime          = "nodejs10.x"
+  filename                       = data.archive_file.lambda_zip.output_path
+  function_name                  = "${var.service_name}-${var.workspace}"
+  role                           = aws_iam_role.lambda.arn
+  handler                        = "index.handler"
+  runtime                        = "python3.12"
+  source_code_hash               = data.archive_file.lambda_zip.output_base64sha256
+  timeout                        = var.lambda_timeout_seconds
+  memory_size                    = var.lambda_memory_mb
+  reserved_concurrent_executions = var.lambda_reserved_concurrency
+
+  environment {
+    variables = {
+      FIREHOSE_STREAM_NAME = aws_kinesis_firehose_delivery_stream.data_stream.name
+      LOG_LEVEL            = "INFO"
+    }
+  }
+
+  depends_on = [aws_cloudwatch_log_group.lambda]
 }
 
 data "aws_iam_policy_document" "assume_by_lambda" {
   statement {
-    sid     = ""
     effect  = "Allow"
     actions = ["sts:AssumeRole"]
-
     principals {
       type        = "Service"
       identifiers = ["lambda.amazonaws.com"]
@@ -38,72 +54,31 @@ data "aws_iam_policy_document" "assume_by_lambda" {
 }
 
 resource "aws_iam_role" "lambda" {
-  name               = "${var.service_name}-lambdaRole"
-  assume_role_policy = "${data.aws_iam_policy_document.assume_by_lambda.json}"
+  name               = "${var.service_name}-${var.workspace}-lambda-role"
+  assume_role_policy = data.aws_iam_policy_document.assume_by_lambda.json
 }
 
 data "aws_iam_policy_document" "lambda" {
   statement {
-    sid    = ""
-    effect = "Allow"
-
-    actions = [
-        "logs:CreateLogGroup"
-    ]
-
+    sid     = "WriteFunctionLogs"
+    effect  = "Allow"
+    actions = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = [
-        "arn:aws:logs:${var.region}:${var.aws_account_id}:*"
+      "${aws_cloudwatch_log_group.lambda.arn}:*",
     ]
   }
 
   statement {
-    sid    = ""
-    effect = "Allow"
-
-    actions = [
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
-    ]
-
+    sid     = "PutEventsToThisDeliveryStream"
+    effect  = "Allow"
+    actions = ["firehose:PutRecord"]
     resources = [
-        "arn:aws:logs:${var.region}:${var.aws_account_id}:log-group:/aws/lambda/${aws_lambda_function.lambda.function_name}:*"
-    ]
-  }
-
-  statement {
-    sid    = ""
-    effect = "Allow"
-
-    actions = [
-        "kinesis:DescribeStreamSummary",
-        "kinesis:DescribeStream",
-        "kinesis:ListStreams",
-        "kinesis:GetShardIterator",
-        "kinesis:GetRecords",
-        "kinesis:ListTagsForStream"
-    ]
-
-    resources = ["*"]
-  }
-
-    statement {
-    sid    = ""
-    effect = "Allow"
-
-    actions = [
-        "firehose:DeleteDeliveryStream",
-        "firehose:PutRecord",
-        "firehose:PutRecordBatch",
-        "firehose:UpdateDestination"
-    ]
-
-    resources = [
-        "arn:aws:firehose:${var.region}:${var.aws_account_id}:*"
+      aws_kinesis_firehose_delivery_stream.data_stream.arn,
     ]
   }
 }
 
 resource "aws_iam_role_policy" "lambda" {
-  role   = "${aws_iam_role.lambda.name}"
-  policy = "${data.aws_iam_policy_document.lambda.json}"
+  role   = aws_iam_role.lambda.name
+  policy = data.aws_iam_policy_document.lambda.json
 }

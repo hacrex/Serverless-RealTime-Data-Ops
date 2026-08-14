@@ -72,6 +72,16 @@ resource "aws_api_gateway_api_key" "api_key" {
 resource "aws_api_gateway_usage_plan" "api_usage_plan" {
   name = "usage_${var.service_name}-API"
 
+  throttle_settings {
+    burst_limit = 20
+    rate_limit  = 10
+  }
+
+  quota_settings {
+    limit  = 10000
+    period = "MONTH"
+  }
+
   api_stages {
     api_id = "${aws_api_gateway_rest_api.api.id}"
     stage  = "${aws_api_gateway_deployment.deployment.stage_name}"

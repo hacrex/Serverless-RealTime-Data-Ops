@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hacrex.dev/schemas/event-envelope.v1.json",
+  "title": "Event envelope v1",
+  "type": "object",
+  "required": ["eventId", "eventType", "occurredAt", "data"],
+  "properties": {
+    "eventId": {"type": "string", "minLength": 1},
+    "eventType": {"type": "string", "minLength": 1},
+    "occurredAt": {"type": "string", "format": "date-time"},
+    "data": {"type": "object"}
+  },
+  "additionalProperties": false
+}
